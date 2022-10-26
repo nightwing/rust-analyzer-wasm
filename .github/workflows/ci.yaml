@@ -6,14 +6,23 @@ on:
    - master
    - trying
    - staging
+  workflow_dispatch:
 
 env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   rust:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +37,7 @@ jobs:
         profile: minimal
         override: true
         components: rustfmt, rust-src
+
 
     - name: Install wasm-pack
       run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -53,3 +63,13 @@ jobs:
       uses: borales/actions-yarn@v2.0.0
       with:
         cmd: --cwd www --ignore-engines build # will run `yarn build` command
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v1
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: './www/dist'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@main
